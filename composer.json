@@ -11,6 +11,7 @@
             "Keyur\\Prikedcd\\": "src/"
         }
     },
+    "license": "MIT",
     "extra": {
         "laravel": {
             "providers": [

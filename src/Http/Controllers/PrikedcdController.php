@@ -129,26 +129,51 @@ class PrikedcdController extends Controller
     }
 
     public function scan()
-    {
-        $baseNamespace = 'App\\Http\\Controllers';
-        $controllersPath = base_path('app/Http/Controllers');
-        $projectPath = base_path();
+{
+    $baseNamespace = 'App\\Http\\Controllers';
+    $controllersPath = base_path('app/Http/Controllers');
+    $projectPath = base_path();
 
-        $files = $this->getPhpFiles($controllersPath);
-        $unusedFunctions = [];
-        $validFiles = [];
+    $files = $this->getPhpFiles($controllersPath);
+    $unusedFunctions = [];
+    $validFiles = [];
 
-        foreach ($files as $file) {
-            $fullClassName = $this->getClassName($file, $baseNamespace, $controllersPath);
-            $className = basename($file, '.php');
-            $fullClassNameParts = explode('\\', $fullClassName);
-            $extractedClassName = end($fullClassNameParts);
+    foreach ($files as $file) {
+        $fullClassName = $this->getClassName($file, $baseNamespace, $controllersPath);
+        $className = basename($file, '.php');
+        $fullClassNameParts = explode('\\', $fullClassName);
+        $extractedClassName = end($fullClassNameParts);
 
-            if ($className === $extractedClassName) {
-                $validFiles[] = $file;
+        if ($className === $extractedClassName) {
+            $validFiles[] = $file;
+        }
+    }
+
+    $totalFunctions = 0;
+    $scannedFunctions = 0;
+
+    // Calculate total functions
+    foreach ($validFiles as $file) {
+        $fullClassName = $this->getClassName2($file, $baseNamespace, $controllersPath);
+
+        if (class_exists($fullClassName)) {
+            $class = new ReflectionClass($fullClassName);
+            $methods = $class->getMethods();
+
+            foreach ($methods as $method) {
+                $methodName = $method->name;
+
+                if ($method->class !== $fullClassName || $methodName === '__construct' || strpos($methodName, '__') === 0) {
+                    continue;
+                }
+
+                $totalFunctions++;
             }
         }
+    }
 
+    // Create a StreamedResponse to send data as a stream
+    $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($validFiles, $baseNamespace, $controllersPath, $projectPath, &$scannedFunctions, &$unusedFunctions, $totalFunctions) {
         foreach ($validFiles as $file) {
             $fullClassName = $this->getClassName2($file, $baseNamespace, $controllersPath);
 
@@ -163,17 +188,34 @@ class PrikedcdController extends Controller
                         continue;
                     }
 
+                    $scannedFunctions++;
+
                     if (!$this->isFunctionCalled($methodName, $projectPath)) {
                         $unusedFunctions[] = "{$fullClassName}::{$methodName}";
                     }
+
+                    // Send progress to the front end
+                    echo "data: Scanned $scannedFunctions of $totalFunctions functions.\n\n";
+                    ob_flush();
+                    flush();
                 }
             }
         }
 
-        return response()->json([
-            'unusedFunctions' => $unusedFunctions,
-        ]);
-    }
+        echo "data: Scan complete.\n\n";
+        echo "data: " . json_encode(['unusedFunctions' => $unusedFunctions]) . "\n\n";
+        ob_flush();
+        flush();
+    });
+
+    // Set the headers for the StreamedResponse
+    $response->headers->set('Content-Type', 'text/event-stream');
+    $response->headers->set('Cache-Control', 'no-cache');
+    $response->headers->set('Connection', 'keep-alive');
+
+    return $response;
+}
+
 
     private function getPhpFiles($dir)
     {
@@ -184,6 +226,11 @@ class PrikedcdController extends Controller
             if ($file->isDir()) {
                 continue;
             }
+
+             // Skip the vendor folder
+        if (strpos($file->getPathname(), DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR) !== false) {
+            continue;
+        }
             if ($file->getExtension() == 'php') {
                 $files[] = $file->getPathname();
             }
@@ -226,4 +273,5 @@ class PrikedcdController extends Controller
         return false;
     }
 }
+
 
