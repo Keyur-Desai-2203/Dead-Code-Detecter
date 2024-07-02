@@ -142,17 +142,64 @@
 </head>
 <body>
     <div class="container">
-        <h1>Unused Controller Functions</h1>
+        <h1>Unused Functions</h1>
         <div class="lds-spinner" id="loader" style="display: none;"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-        <div id="loadingText" style="display: none;">Be Patient, Scanning Controllers, It may take a few minutes...</div>
+        <div id="loadingText" style="display: none;">Be Patient, Scanning, It may take a few minutes...</div>
         <button class="btn" id="scanButton">Scan Controllers</button>
+        <button class="btn" id="modelButton">Scan Models</button>
         <div id="progress"></div>
         <div id="results"></div>
     </div>
 
     <script>
+        document.getElementById('modelButton').addEventListener('click', function() {
+            document.getElementById('scanButton').style.display = 'none';
+            document.getElementById('modelButton').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('loadingText').style.display = 'block';
+            const progressDiv = document.getElementById('progress');
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            let unusedFunctionsCount = 0;
+
+            if (!!window.EventSource) {
+                const source = new EventSource("{{ route('model_scan') }}");
+
+                source.onmessage = function(event) {
+                    const data = event.data;
+
+                    if (data.startsWith("Scanned")) {
+                        progressDiv.innerHTML = data;
+                    } else {
+                        const result = JSON.parse(data);
+                        if (result.unusedFunctions) {
+                            unusedFunctionsCount = result.unusedFunctions.length;
+                            resultsDiv.innerHTML = '<ul>' + result.unusedFunctions.map(function(fn) {
+                                return '<li>' + fn + '</li>';
+                            }).join('') + '</ul>';
+                            progressDiv.innerHTML = `Scan complete. Found ${unusedFunctionsCount} unused functions.`;
+                            document.getElementById('loader').style.display = 'none';
+                            document.getElementById('loadingText').style.display = 'none';
+                        }
+                        source.close(); 
+                    }
+                };
+
+                source.onerror = function(event) {
+                    progressDiv.innerHTML = "An error occurred while scanning.";
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('loadingText').style.display = 'none';
+                    source.close();
+                };
+            } else {
+                progressDiv.innerHTML = "Your browser doesn't support Server-Sent Events.";
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('loadingText').style.display = 'none';
+            }
+        });
         document.getElementById('scanButton').addEventListener('click', function() {
             document.getElementById('scanButton').style.display = 'none';
+            document.getElementById('modelButton').style.display = 'none';
             document.getElementById('loader').style.display = 'block';
             document.getElementById('loadingText').style.display = 'block';
             const progressDiv = document.getElementById('progress');
