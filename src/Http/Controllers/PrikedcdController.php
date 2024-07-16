@@ -251,8 +251,9 @@ class PrikedcdController extends Controller
 
             foreach ($methods as $method) {
                 $methodName = $method->name;
+                $methodFile = $method->getFileName();
 
-                if ($method->class !== $fullClassName || $methodName === '__construct' || strpos($methodName, '__') === 0) {
+                if ($method->class !== $fullClassName || $methodName === '__construct' || strpos($methodName, '__') === 0 || strpos($methodFile, 'vendor') !== false) {
                     continue;
                 }
 
@@ -272,8 +273,8 @@ class PrikedcdController extends Controller
 
                 foreach ($methods as $method) {
                     $methodName = $method->name;
-
-                    if ($method->class !== $fullClassName || $methodName === '__construct' || strpos($methodName, '__') === 0) {
+                    $methodFile = $method->getFileName();
+                    if ($method->class !== $fullClassName || $methodName === '__construct' || strpos($methodName, '__') === 0 || strpos($methodFile, 'vendor') !== false) {
                         continue;
                     }
 
@@ -352,7 +353,9 @@ class PrikedcdController extends Controller
     private function isFunctionCalled($functionName, $projectPath)
     {
         $files = $this->getPhpFiles($projectPath);
-        $pattern = '/(?:->\s*' . preg_quote($functionName, '/') . '\s*\(|\'\s*' . preg_quote($functionName, '/') . '\'\s*|\:\:\s*' . preg_quote($functionName, '/') . '\s*\()/';
+        // $pattern = '/(?:->\s*' . preg_quote($functionName, '/') . '\s*\(|\'\s*' . preg_quote($functionName, '/') . '\'\s*|\:\:\s*' . preg_quote($functionName, '/') . '\s*\()/';
+        $pattern = '/(?:->\s*' . preg_quote($functionName, '/') . '\s*\(|\'\s*' . preg_quote($functionName, '/') . '\'\s*|\:\:\s*' . preg_quote($functionName, '/') . '\s*\(|@\s*' . preg_quote($functionName, '/') . '\s*\()/';
+
         foreach ($files as $file) {
             $contents = file_get_contents($file);
             if (preg_match($pattern, $contents)) {

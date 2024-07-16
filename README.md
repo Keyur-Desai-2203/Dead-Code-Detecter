@@ -18,13 +18,17 @@ composer require keyur/prikedcd
 
 ## Working
 
-After installing package you have to hit route '/prikedcd' and then click on any buttons 'Scan Controllers' or 'Scan Models' button and then wait untill output comes and that process may take time based on project size, so be patient and wait for output.
+After installing package you have to hit route '/dead-code-detector' and then click on any buttons 'Scan Controllers' or 'Scan Models' button and then wait untill output comes and that process may take time based on project size, so be patient and wait for output.
+
+#### Before, Scanning Please Read Basic Instructions Carefully.
 
 ## Version Information
 
 - Till version 1.0.2 all functionality is applicable for controllers only.
 
-- Now, in version 1.1.0, We have added model scanning also, means now model and controller both can scan individually. 
+- Till version 1.1.0, We have added model scanning also, means now model and controller both can scan individually. 
+
+- Now, in Latest version 1.1.1, we have added new UI for our package and did some fixes for scanning which is not applicable for previous laravel version now for all laravel versions it is working perfectly fine.
 
 ## Upcoming
 

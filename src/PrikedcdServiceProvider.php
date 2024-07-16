@@ -18,6 +18,10 @@ class PrikedcdServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../resources/views' => resource_path('views/vendor/prikedcd'),
         ]);
+
+        $this->publishes([
+            __DIR__.'/../public' => public_path('vendor/keyur/prikedcd'),
+        ], 'public');
     }
 
     public function register()
